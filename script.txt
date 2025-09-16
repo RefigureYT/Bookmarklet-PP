@@ -1,0 +1,565 @@
+// ==================================================
+// == SCRIPT AUTO-SOLVER BOT v4.0
+// == Resolve a prova inteira automaticamente.
+// ==================================================
+
+(function() {
+    // --- CONFIGURAÇÕES GLOBAIS ---
+    const MIN_ESPERA_SEGUNDOS = 40;
+    const MAX_ESPERA_SEGUNDOS = 100;
+
+    // --- CONTROLE DE EXECUÇÃO ---
+    // Para parar o bot, abra o console (F12) e digite: window.rodarBot = false;
+    window.rodarBot = true;
+    console.log('[BOT]: Para parar a execução a qualquer momento, digite "window.rodarBot = false;" no console e pressione Enter.');
+
+    // --- BANCO DE DADOS DE RESPOSTAS ---
+    const jsonGabarito = [
+    {
+        "id_da_questao": 282751002,
+        "contexto": "Autora de 'Um defeito de cor', Ana Maria Gonçalves é a primeira mulher negra a ingressar na ABL Escritora mineira foi eleita para a cadeira 33 nesta quinta-feira (10) A escritora Ana Maria Gonçalves foi eleita nesta quinta-feira (10) para a Cadeira 33 da Academia Brasileira de Letras. A mineira de 54 anos sucede o gramático, professor e filólogo Evanildo Bechara, morto em maio, e se torna a primeira mulher negra a integrar o quadro de imortais da Casa de Machado de Assis desde a fundação da instituição, em 1897. Ela teve 30 votos e a escritora, professora e ativista Eliane Potiguara, 1 voto. Atual ocupante da cadeira 20 desde a posse em 2022, Gilberto Gil celebrou a chegada de uma mulher negra à instituição. — Isso representa que estamos vivos, permanecendo ativos nesse contexto variado de diversidades muitas e de todos os tipos: étnicas, culturais, religiosas, etc. — diz Gil, que definiu a literatura de Ana Maria como de \"fôlego e muita potência\". Empossada em junho de 2024, Lilia Schwarcz acredita que a eleição da mineira abre caminhos. — (Ela) pensa o passado, interfere no presente e faz toda a diferença no futuro. Viva Ana Maria Gonçalves que nos representa nesse Brasil que se quer, e precisa ser, mais plural, inclusivo e assim democrático. [...] Gonçalves foi escritora residente na Universidade Tulane em 2007, na Universidade Stanford em 2008 e no Middlebury College em 2009. Morou oito anos em Nova Orleans, no sul dos Estados Unidos. Por sua atuação na causa antirracista, foi condecorada pelo governo brasileiro com a comenda da Ordem de Rio Branco, em 2013.",
+        "enunciado_pergunta": "Com base na notícia, a eleição da escritora Ana Maria Gonçalves para ocupar uma cadeira na ABL",
+        "alternativa_correta": {
+            "A": "renova o perfil dos ocupantes das cadeiras da ABL, tornando-a mais representativa e democrática."
+        }
+    },
+    {
+        "id_da_questao": 282751004,
+        "contexto": "Lei Brasileira de Inclusão trouxe avanços no mercado de trabalho Em vigor há 10 anos, lei vai além das cotas para PCD e exige garantias A Lei Brasileira de Inclusão da Pessoa com Deficiência (LBI – Lei nº 13.146/2015) completou uma década no dia 6 de julho, e, na opinião de especialistas, consolidou-se como um marco na garantia de direitos e na promoção da inclusão social. A pesquisadora do Instituto de Pesquisa Econômica Aplicada (Ipea) Liliane Gonçalves Bernardes destaca que a LBI consolida um modelo mais inclusivo de acesso ao mercado de trabalho, pois é baseada na Convenção sobre os Direitos das Pessoas com Deficiência da ONU (Decreto 6.949/2009). Segundo ela, esse é um modelo baseado em direitos humanos, e vai além apenas da obrigatoriedade de contratação de pessoas com deficiência, prevista na Lei de Cotas (Lei 8.213/1991). A LBI determina que empregadores devem garantir condições de acessibilidade no ambiente de trabalho, incluindo adaptações razoáveis que não acarretem ônus desproporcional, aspectos que não eram detalhados na Lei de Cotas. [...] Outro avanço importante é a tipificação da discriminação contra pessoas com deficiência no trabalho como crime, prevendo penalidades para práticas como recusa de contratação, demissão injustificada ou negativa de promoção com base na deficiência, afirma Liliane.",
+        "enunciado_pergunta": "Segundo as informações apresentadas no texto, a Lei Brasileira de Inclusão",
+        "alternativa_correta": {
+            "E": "assegura o direito à contratação de pessoas com deficiência e ambiente acessível."
+        }
+    },
+    {
+        "id_da_questao": 282751005,
+        "contexto": "A RUA Eu amo a rua. Esse sentimento de natureza toda íntima não vos seria revelado por mim se não julgasse, e razões não tivesse para julgar, que este amor assim absoluto e assim exagerado é partilhado por todos vós. Nós somos irmãos, nós nos sentimos parecidos e iguais; nas cidades, nas aldeias, nos povoados, não porque soframos, com a dor e os desprazeres, a lei e a polícia, mas porque nos une, nivela e agremia o amor da rua. É este mesmo o sentimento imperturbável e indissolúvel, o único que, como a própria vida, resiste às idades e às épocas. Tudo se transforma, tudo varia — o amor, o ódio, o egoísmo. Hoje é mais amargo o riso, mais dolorosa a ironia. Os séculos passam, deslizam, levando as coisas fúteis e os acontecimentos notáveis. Só persiste e fica, legado das gerações cada vez maior, o amor da rua. [...] Essas qualidades nós as conhecemos vagamente. Para compreender a psicologia da rua não basta gozar-lhe as delícias como se goza o calor do Sol e o lirismo do luar. É preciso ter espírito vagabundo, cheio de curiosidades malsãs e os nervos com um perpétuo desejo incompreensível, é preciso ser aquele que chamamos flâneur e praticar o mais interessante dos esportes — a arte de flanar. É fatigante o exercício? Glossário Flâneur : errante, observador.",
+        "enunciado_pergunta": "A partir da leitura da crônica, identifica-se que o texto é uma",
+        "alternativa_correta": {
+            "E": "caracterização das ruas como dignas à curiosidade e à observação."
+        }
+    },
+    {
+        "id_da_questao": 282751006,
+        "contexto": "As enchentes As chuvaradas de verão, quase todos os anos, causam no nosso Rio de Janeiro, inundações desastrosas. Além da suspensão total do tráfego, com uma prejudicial interrupção das comunicações entre os vários pontos da cidade, essas inundações causam desastres pessoais lamentáveis, muitas perdas de haveres e destruição de imóveis. De há muito que a nossa engenharia municipal se devia ter compenetrado do dever de evitar tais acidentes urbanos. Uma arte tão ousada e quase tão perfeita, como é a engenharia, não deve julgar irresolúvel tão simples problema. O Rio de Janeiro, da avenida, dos squares , dos freios elétricos, não pode estar à mercê de chuvaradas, mais ou menos violentas, para viver a sua vida integral. Como está acontecendo atualmente, ele é função da chuva. Uma vergonha! Não sei nada de engenharia, mas, pelo que me dizem os entendidos, o problema não é tão difícil de resolver como parece fazerem constar os engenheiros municipais, procrastinando a solução da questão. O Prefeito Passos, que tanto se interessou pelo embelezamento da cidade, descurou completamente de solucionar esse defeito do nosso Rio. Cidade cercada de montanhas e entre montanhas, que recebe violentamente grandes precipitações atmosféricas, o seu principal defeito a vencer era esse acidente das inundações. Infelizmente, porém, nos preocupamos muito com os aspectos externos, com as fachadas, e não com o que há de essencial nos problemas da nossa vida urbana, econômica, financeira e social. Vida urbana, 19-1-1915",
+        "enunciado_pergunta": "Na crônica do escritor Lima Barreto, o narrador",
+        "alternativa_correta": {
+            "B": "critica a superficialidade no planejamento urbano do Rio de Janeiro."
+        }
+    },
+    {
+        "id_da_questao": 282751007,
+        "contexto": null,
+        "enunciado_pergunta": "No cartum, apesar da inexistência de elementos verbais, os recursos imagéticos que o compõem permitem identificar um(a)",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/GbamgwNp4aFLA6Bm42H5uSxrWFGfqU.png",
+        "alternativa_correta": {
+            "E": "esboço crítico dos efeitos do desmatamento."
+        }
+    },
+    {
+        "id_da_questao": 282751008,
+        "contexto": null,
+        "enunciado_pergunta": "No texto, a representação dos pais no último quadrinho sugere a(o)",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/6MP5waq9o8rRv2DdDDFC0O0L4J7ZlD.png",
+        "alternativa_correta": {
+            "E": "hiperconectividade como fator de distanciamento entre pais e filhos."
+        }
+    },
+    {
+        "id_da_questao": 282751009,
+        "contexto": "Leia o trecho da canção. Cérebro Eletrônico O cérebro eletrônico comanda Manda e desmanda Ele é quem manda Mas ele não anda GIL, Gilberto. Cérebro Eletrônico. In : Gilberto Gil . São Paulo: Sony Music Ltda., 1969. (3min.51s.).",
+        "enunciado_pergunta": "O emprego das formas verbais “comanda”, “manda” e “desmanda” reforça",
+        "alternativa_correta": {
+            "D": "a personificação das máquinas."
+        }
+    },
+    {
+        "id_da_questao": 282751010,
+        "contexto": "A paz sem vencedor e sem vencidos Dai-nos Senhor a paz que vos pedimos A paz sem vencedor e sem vencidos Que o tempo que nos deste seja um novo Recomeço de esperança e de justiça Dai-nos Senhor a paz que vos pedimos [...] Para entendermos vosso mandamento Para que venha a nós o vosso reino",
+        "enunciado_pergunta": "O eu lírico engloba toda a Humanidade em seu pedido de intercessão divina em prol da paz mundial. A expressão que tem o efeito de súplica em nome de todos é",
+        "alternativa_correta": {
+            "A": "\"Dai-nos Senhor\"."
+        }
+    },
+    {
+        "id_da_questao": 282751012,
+        "contexto": "Leia o texto e responda à questão. Dia, lugar e hora Luan Santana Se eu não tivesse atravessado Aquela hora no sinal vermelho Se eu não parasse bem na hora do almoço Pra cortar o cabelo E ó que eu nem sou vaidoso",
+        "enunciado_pergunta": "Identifique o verso da canção em que há marcas de linguagem coloquial.",
+        "alternativa_correta": {
+            "B": "“Pra cortar o cabelo”."
+        }
+    },
+    {
+        "id_da_questao": 282751013,
+        "contexto": "Leia a tirinha e responda à questão. ",
+        "enunciado_pergunta": "A tirinha, no terceiro quadro, apresenta um exemplo de",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/VfzIJt1dDWWyYDq3SdVWxoSdndN7Oo.png",
+        "alternativa_correta": {
+            "D": "variedade regional."
+        }
+    },
+    {
+        "id_da_questao": 282751014,
+        "contexto": "Leia o texto e responda à questão. Mercado de trabalho: qualificação e iniciativa O mercado de trabalho nunca foi uma expressão tão utilizada como agora. A preocupação por um futuro promissor, mais do que nunca, tem sido muito percebida nos dias atuais, em que se exige muita qualificação profissional e capacidade de iniciativa. Ser profissional não é simplesmente atuar numa área de trabalho, ter um emprego e exercer algumas funções. Quem não procura melhorar naquilo que realiza, obtendo cada vez mais informações para otimizar o serviço prestado tem a iminência do desemprego à sua frente. Não se admite mais o trabalho baseado no senso comum, sem o mínimo de conhecimento técnico-científico que permita a esse profissional satisfazer as necessidades contemporâneas, inclusive sendo versátil, quando preciso. [...] Nos dias atuais, o profissional que quiser ser bem-sucedido precisa reunir uma série de características, trabalhar em vários campos, relacionar-se bem com as pessoas e ser completamente dedicado. A situação em que se encontra a economia não dá chances a deslizes, por menores que sejam, e cabe a todo profissional a busca incessante para que o tal mercado de trabalho deixe de ser um monstro e passe a ser a solução. Vocabulário: Promissor: de sucesso. Iminência: que está prestes a acontecer. Versátil: que se adapta a diferentes tarefas, situações. Incessante: constante.",
+        "enunciado_pergunta": "Qual a tese defendida pelo autor?",
+        "alternativa_correta": {
+            "D": "O profissional bem-sucedido hoje é aquele que busca qualificação constante, tem iniciativa, versatilidade e dedicação."
+        }
+    },
+    {
+        "id_da_questao": 282751015,
+        "contexto": "Leia o texto e responda à questão. Pode-se dizer que, atualmente, a internet se tornou uma ferramenta de comunicação indispensável para boa parte da população brasileira. Apesar dela não ser acessível para 100% da população, mais da metade, cerca de 58% já tem acesso a esse recurso. Mas como os outros 42% vivem sem esse recurso? Basicamente, mesmo não tendo acesso direto a ele, os indivíduos dependem de recursos que fazem utilização da rede mundial, como é o caso, por exemplo, do alistamento militar que passou a ser online.",
+        "enunciado_pergunta": "Em: “[...] mesmo não tendo acesso direto aele[...]”, o pronome em destaque faz referência a",
+        "alternativa_correta": {
+            "B": "recurso."
+        }
+    },
+    {
+        "id_da_questao": 282751016,
+        "contexto": "Leia o texto e responda à questão. Talvez a nordestina já tivesse chegado à conclusão de que a vida incomoda bastante, alma que não cabe bem no corpo, mesmo alma rala como a sua. [...] Porque, por pior que fosse sua situação, não queria ser privada de si, ela queria ser ela mesma. Achava que cairia em grave castigo e até risco de morrer se tivesse gosto. Então defendia-se da morte por intermédio de um viver de menos, gastando pouco de sua vida para esta não acabar. Essa economia lhe dava alguma segurança pois, quem cai, do chão não passa. Teria ela a sensação de que vivia para nada? Nem posso saber, mas acho que não. Só uma vez se fez uma trágica pergunta: Quem sou eu? Assustou-se tanto que parou completamente de pensar.",
+        "enunciado_pergunta": "No fragmento extraído do romance “A hora da estrela”, de Clarice Lispector, a característica associada à escrita reflexiva e psicológica, da terceira geração modernista, é:",
+        "alternativa_correta": {
+            "A": "a subjetividade."
+        }
+    },
+    {
+        "id_da_questao": 282751017,
+        "contexto": "Leia o texto e responda à questão. O Burrinho Pedrês João Guimarães Rosa [...] — Com vara boa, de pau-d’arco, na mão de bom vaqueiro? — Mas, minha vara, ela tinha mandado longe. Não falei?... Josias foi o mais desfeliz, porque foi jogado para tudo quanto era lado, com a monstra sapateando em cima dele e chifrando... Mas ela só não me pegou também, porque, com o fezuê, até o bezerrinho levou susto e atravessou na frente, entre nós dois, espinoteando, com a caudinha na cacunda. Quando eu ia pular a cerca, ela ainda me alcançou, na sola dum pé: juntou com a força do pulo que eu ia dando, e eu caí, por riba do monte de achas de aroeira que estava lá... Culpa eu tive?... Má sorte do companheiro. Era o dia dele, o meu não era!... — Ei, vamos mudar de contar coisas tristes, que seu Major não gosta…",
+        "enunciado_pergunta": "Ao utilizar o recurso do neologismo, o autor",
+        "alternativa_correta": {
+            "A": "cria palavras novas na língua para expressar ideias de forma original."
+        }
+    },
+    {
+        "id_da_questao": 282751018,
+        "contexto": "Leia o texto e responda à questão. LISPECTOR, Clarice. A Hora da Estrela Romance. São Paulo: 1977, 86 p. Por Rossana Kátia Pimentel Em “A Hora da Estrela”, romance de Clarice Lispector publicado pela primeira vez em 1977, somos apresentados a Ricardo S. M., o narrador da história e que, ao mesmo tempo, toma a forma de um dos personagens principais. O narrador nos conta sobre Macabéa, talvez a personagem mais miserável que você possa conhecer. Alternando entre a narração, as reflexões de Macabéa e as do próprio Rodrigo S. M., conhecemos a história da mulher nordestina. Depois de perder a tia, muda-se para o Rio de Janeiro, onde se emprega como datilógrafa. É uma história extremamente simples. Entretanto, Clarice constrói essa simples narrativa num pilar de reflexão e introspecção, um sentido poético inigualável. \"A Hora da Estrela\" é um livro recomendado àqueles que gostam de leituras profundas e reflexivas.",
+        "enunciado_pergunta": "O texto é uma resenha crítica porque apresenta",
+        "alternativa_correta": {
+            "B": "uma análise interpretativa, que destaca aspectos relevantes da obra."
+        }
+    },
+    {
+        "id_da_questao": 282751019,
+        "contexto": "Leia o texto e responda à questão. O SERTÃO DE JOÃO GUIMARÃES ROSA Por Instituto Ling 20/08/2021 Grande Sertão: Veredas um dos maiores romances da literatura brasileira, não apenas em razão de sua extensão, mas também pela inovação linguística, sendo o único romance de João Guimarães Rosa. O autor desafiou os leitores com um belíssimo texto no qual apresenta a língua materna que pode transformar-se com os dialetos do território. Publicado em 1956, o romance, com mais de 600 páginas e ausência de capítulos, é elaborado cruzando elementos da realidade histórico-social brasileira e a presença da transcrição oral. A história acontece no estado de Minas Gerais e caminha pelos estados próximos, como Bahia e Goiás. Narrada em primeira pessoa pelo herói da obra, o ex-jagunço Riobaldo dialoga sobre sua vida com um sujeito que aparece de forma indireta na obra. Riobaldo, agora na condição de fazendeiro, relembra suas lutas, seus medos e o seu amor reprimido. No enredo de suas histórias vai apresentar o sertão a partir do ponto de vista de um jagunço que segue um código de ética específico da sua realidade. Vocabulário: Dialeto: modo de falar próprio de uma comunidade. Jagunço: cangaceiro. Reprimido: contido.",
+        "enunciado_pergunta": "Identifique o fragmento do texto em que há uma opinião do resenhista sobre a obra.",
+        "alternativa_correta": {
+            "E": "“O autor desafiou os leitores com um belíssimo texto no qual apresenta a língua materna que pode transformar-se [...]”."
+        }
+    },
+    {
+        "id_da_questao": 282751020,
+        "contexto": "Leia o texto e responda à questão. Morte e vida severina João Cabral de Melo Neto [...] — Vou eu que a viagem é longa, irmãos das almas, é muito longa a viagem e a serra é alta. — Mais sorte tem o defunto irmãos das almas, pois já não fará na volta a caminhada. — Toritama não cai longe, irmãos das almas, seremos no campo santo de madrugada. — Partamos enquanto é noite irmãos das almas, que é o melhor lençol dos mortos noite fechada. [...]",
+        "enunciado_pergunta": "No fragmento destacado \"— Mais sorte tem o defunto irmãos das almas,/pois já não fará na volta/ a caminhada”, temos uma oração subordinada adverbial",
+        "alternativa_correta": {
+            "B": "causal, pois exprime uma causa."
+        }
+    },
+    {
+        "id_da_questao": 282751021,
+        "contexto": "Leia o texto e responda à questão. Morte e vida severina João Cabral de Melo Neto [...] — E da maneira em que está não vão ter onde se enterrar. — Eu também, antigamente, fui do subúrbio dos indigentes, e uma coisa notei que jamais entenderei: essa gente do Sertão que desce para o litoral, sem razão, fica vivendo no meio da lama, comendo os siris que apanha; pois bem: quando sua morte chega, temos que enterrá-los em terra seca. [...]",
+        "enunciado_pergunta": "No verso, “pois bem:quandosua morte chega\", o advérbio em destaque indica uma relação de",
+        "alternativa_correta": {
+            "C": "temporalidade."
+        }
+    },
+    {
+        "id_da_questao": 282751022,
+        "contexto": "Leia o texto e responda à questão. Pesquisa indica que tratamentos anti-inflamatórios podem retardar a progressão da doença de Alzheimer As causas para o surgimento e a progressão da doença de Alzheimer, que representa aproximadamente 70% do total de casos de demência no mundo, ainda são pouco compreendidas pela medicina. São conhecidos alguns fatores de risco: hábitos como o tabagismo, doenças como a diabetes e fatores genéticos são alguns exemplos. Também se sabe de medidas que ajudam na prevenção, como a atividade física e o exercício mental. Os tratamentos atuais para pacientes de Alzheimer são sintomáticos, ou seja, não param ou sequer retardam a progressão da doença. Pesquisa realizada por João Pedro Ferrari Souza, estudante de doutorado no Programa de Pós-graduação em Ciências Biológicas: Bioquímica da UFRGS (PPGBIOQ),  aborda o principal fator de risco genético para a doença de Alzheimer: a variante e4 do gene APOE, que codifica a apolipoproteína E. Os resultados registram a primeira evidência clínica de que esse gene afeta a progressão da doença neurodegenerativa por meio da inflamação cerebral. “Especificamente, nossos achados sugerem que tratamentos que visem à redução da inflamação cerebral têm o potencial de ajudar a conter a progressão da doença de Alzheimer, especialmente em indivíduos que carregam o gene APOE4”, explica João. O estudo originou um artigo, publicado pela revista Science Advances no começo de abril. Disponível em: https://www.ufrgs.br/ciencia/pesquisa-indica-que-tratamentos-anti-inflamatorios-podem-retardar-a-progressao-da-doenca-de-alzheimer/ . Acesso em 16 jun. 25. Fragmento adaptado. Vocabulário: Retardar: deixar vagaroso, lento. Progressão: avanço. Alzheimer: doença que causa deterioração das funções cerebrais, acarretando perda de memória, da linguagem, da capacidade de controlar funções básicas. Em alguns casos pode evoluir para demência. Sintomático: que apresenta algum sintoma. Apolipoproteína E (APOE): proteína envolvida no transporte de colesterol e outras moléculas, que auxilia na reparação de danos no cérebro, como doenças cardiovasculares e Alzheimer. “Doença Neurodegenerativa”: expressão utilizada para classificar diagnósticos, que costumam afetar os neurônios do cérebro humano.",
+        "enunciado_pergunta": "Qual a finalidade do texto?",
+        "alternativa_correta": {
+            "B": "compartilhar conhecimento científico com linguagem clara e objetiva."
+        }
+    },
+    {
+        "id_da_questao": 282751023,
+        "contexto": "Leia os textos I e II e responda à questão. Texto I: Estudos publicados em 2007 e 2005 apontam que ingredientes derivados do alumínio, usados em desodorantes, também podem interferir nos níveis de estrogênio e facilitar a formação de tumores. Texto II: Fake news – desodorante pode causar câncer de mama Essa notícia começou a se espalhar a partir da associação de que uma grande parte dos cânceres de mama ocorrem próximos a axila, onde é usado o desodorante. Apesar do produto poder causar alergias e infecções nessa região do corpo, estudos já comprovaram que os desodorantes e antitranspirantes não tem nenhuma relação com o aumento das chances de ter câncer de mama. Com base nos Textos I e II, assinale a alternativa correta:",
+        "enunciado_pergunta": "",
+        "alternativa_correta": {
+            "C": "O Texto II afirma que os desodorantes podem causar infecções e alergias, mas não há comprovação de que causem câncer de mama."
+        }
+    },
+    {
+        "id_da_questao": 282751024,
+        "contexto": "Leia o texto e responda à questão. Eu nunca guardei rebanhos, Mas é como se os guardasse. Minha alma é como um pastor, Conhece o vento e o sol E anda pela mão das Estações A seguir e a olhar. Toda a paz da Natureza sem gente Vem sentar-se a meu lado. Mas eu fico triste como um pôr do Sol Para a nossa imaginação, Quando esfria no fundo da planície E se sente a noite entrada Como uma borboleta pela janela.",
+        "enunciado_pergunta": "No verso “Minha alma é como um pastor”, há a presença de qual figura de linguagem?",
+        "alternativa_correta": {
+            "A": "Comparação."
+        }
+    },
+    {
+        "id_da_questao": 282751025,
+        "contexto": "Leia o texto e responda à questão. O mistério das cousas, onde está ele? Alberto Caeiro Porque o único sentido oculto das cousas É elas não terem sentido oculto nenhum, É mais estranho do que todas as estranhezas E do que os sonhos de todos os poetas E os pensamentos de todos os filósofos , Que as cousas sejam realmente o que parecem ser E não haja nada que compreender.",
+        "enunciado_pergunta": "Os fragmentos destacados no texto são exemplos de hipérbole, figura de linguagem que",
+        "alternativa_correta": {
+            "A": "intensifica uma ideia de forma exagerada."
+        }
+    },
+    {
+        "id_da_questao": 282751026,
+        "contexto": "Leia o texto e responda à questão. ",
+        "enunciado_pergunta": "Mediante uma matéria sobre o transporte público na cidade de Niterói, um leitor envia essa carta ao jornal com o objetivo de",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/G14ch9VX0AimVm8biurQN37vnC8ELh.png",
+        "alternativa_correta": {
+            "C": "manifestar sua opinião crítica acerca do assunto veiculado."
+        }
+    },
+    {
+        "id_da_questao": 282751027,
+        "contexto": "Leia a carta e responda à questão. Maceió, 27 de agosto de 2024. Carta Aberta à Prefeitura de Maceió Prezado Sr. Prefeito, Nós, da Associação de Moradores do Bairro Jardim das Flores, escrevemos para expressar nossa preocupação com a deterioração da infraestrutura em nossa comunidade. As ruas esburacadas e a falta de iluminação pública estão gerando sérios problemas de segurança e desconforto para os moradores. Dados da Secretaria de Segurança Pública mostram um aumento de 30% nos crimes contra o patrimônio no último ano. Além disso, as escolas e os centros de saúde enfrentam problemas graves de infraestrutura. Diante o exposto, solicitamos à Prefeitura que realize o recapeamento das vias, instale iluminação pública e promova melhorias nas instituições locais. Agradecemos pela atenção e aguardamos uma resposta positiva. Atenciosamente, Associação dos Moradores BJF.",
+        "enunciado_pergunta": "Identifique o trecho do texto em que está empregada a regência verbal de acordo com a norma padrão.",
+        "alternativa_correta": {
+            "A": "“instale iluminação pública\"."
+        }
+    },
+    {
+        "id_da_questao": 282751028,
+        "contexto": "Leia o texto e responda à questão. Nós, cidadãos preocupados com o futuro do nosso planeta e das próximas gerações, viemos por meio deste manifesto expressar nosso repúdio às ações que têm contribuído para a degradação do meio ambiente. Dessa forma, entendemos que a preservação ambiental é essencial para garantir a qualidade de vida e o equilíbrio dos ecossistemas. Assinamos, portanto, este manifesto em defesa do meio ambiente e convocamos a todos para se unirem a essa causa. Cidadãos pela Preservação Ambiental",
+        "enunciado_pergunta": "No trecho: “Nós, cidadãospreocupados com o futurodo nosso planeta e das próximas gerações [...]\", a expressão em destaque é",
+        "alternativa_correta": {
+            "A": "um caso de regência nominal."
+        }
+    },
+    {
+        "id_da_questao": 282751029,
+        "contexto": "Leia o texto e responda à questão. Acredito que arte é sentimento. É a manifestação de quem somos como seres humanos sensíveis em reação aos atos sensíveis ou insensíveis de outros humanos, do mundo natural e do mundo não natural. Criamos arte porque precisamos reagir; reagir com raiva, reagir com medo, reagir com amor, adoração, paz, alegria, cura, perplexidade e complexidade. [...] Acredito que o sentimento da arte só deve ser controlado para criar uma representação visual, física ou auditiva de si mesmo. [...] Convoco todos os membros de nossa sociedade a contribuírem para a criação artística, pois somos uma comunidade de seres que sentem. Portanto, porque sentimos, somos artistas. Mesmo que nossa contribuição seja apenas um pequeno desenho, poema ou padrão, temos a capacidade de despertar uma pergunta ou frase na mente de outra pessoa. Com a arte, criamos um mundo pensante.",
+        "enunciado_pergunta": "Qual o tipo de manifesto presente no texto?",
+        "alternativa_correta": {
+            "A": "Artístico."
+        }
+    },
+    {
+        "id_da_questao": 282751031,
+        "contexto": "Even given our contemporary AI tools, the images and sound they can create are not merely replications of data input. They are new creations. For example, AI systems capable of creating an image from a verbal description are creating a new image. One might therefore take them to be “merely” translating the verbal description given to them by a (human) user into an imagistic format, but this is not the same as making a copy.",
+        "enunciado_pergunta": "Para o autor do texto, o material gerado por IA através de comandos humanos é considerado:",
+        "alternativa_correta": {
+            "C": "Uma nova criação."
+        }
+    },
+    {
+        "id_da_questao": 282751032,
+        "contexto": "Getting AI governance right is one of the most consequential challenges of our time, calling for mutual learning based on the lessons and good practices emerging from the different jurisdictions around the world. The objective of the Global AI Ethics and Governance Observatory is to offer a global resource for policymakers, regulators, academics, the private sector and civil society to find solutions to the most pressing challenges posed by Artificial Intelligence. The Observatory showcases information about the readiness of countries to adopt AI ethically and responsibly. It also hosts the AI Ethics and Governance Lab, which gathers contributions, impactful research, toolkits and good practices.",
+        "enunciado_pergunta": "O tema apresentado no texto é:",
+        "alternativa_correta": {
+            "A": "O uso ético da inteligência artificial."
+        }
+    },
+    {
+        "id_da_questao": 282751033,
+        "contexto": "The growing use of AI systems has intensified discussions around fairness and bias in artificial intelligence as potential biases and discrimination become more apparent. This study examines the sources, impacts, and mitigation strategies related to fairness and bias in AI. Multiple studies have identified biases against certain groups in AI systems, such as the facial recognition systems studied by Buolamwini and Gebru [1] and hiring algorithms examined by Dastin [2]. These biases can perpetuate systemic discrimination and inequality, with detrimental effects on individuals and communities in areas like hiring, lending, and criminal justice. 1. Buolamwini, J.; Gebru, T. Gender shades: Intersectional accuracy disparities in commercial gender classification. In Proceedings of the 1st Conference on Fairness, Accountability and Transparency , New York, NY, USA, 23–24 February 2018; pp. 77–91. 2. Dastin, J. Amazon scraps secret AI recruiting tool that showed bias against women. In Ethics of Data and Analytics ; Auerbach Publications: Boca Raton, FL, USA, 2018; pp. 296–299. Vocabulário : Growing: crescimento Fairness : justiça Bias: preconceito. Against: contra",
+        "enunciado_pergunta": "Segundo o texto, a inclinação sistemática de um sistema de Inteligência Artificial pode",
+        "alternativa_correta": {
+            "B": "manter a discriminação e a desigualdade, prejudicando pessoas e comunidades."
+        }
+    },
+    {
+        "id_da_questao": 282751034,
+        "contexto": "Here’s the paradox: We need to think of the workforce as evolving with — rather than being supplanted by — generative AI. The workforce will need to evolve, and workers will have to learn new skills, iteratively and over a period of years. Leaders must adopt a new approach to maximize the potential of AI in their organizations, which requires tracking key developments in AI differently, using an iterative process to cultivate a ready workforce, and most importantly, creating evidence-backed future scenarios that challenge conventional thinking within the organization.",
+        "enunciado_pergunta": "Para o autor do texto, a presença da IA exigirá que o trabalhador",
+        "alternativa_correta": {
+            "D": "busque se adaptar continuamente aprendendo novas habilidades."
+        }
+    },
+    {
+        "id_da_questao": 282751035,
+        "contexto": "Generative AI, he thought, might be a silver bullet of sorts. It could create cost savings and efficiencies through automation, but might these new tools also solve the talent shortage issue? To put it plainly: How soon could AI replace human workers? Vocabulário: Plainly : claramente. Talent shortage issue : problema de escassez de talentos.",
+        "enunciado_pergunta": "O termo em destaque no texto “BUT” transmite a ideia de",
+        "alternativa_correta": {
+            "A": "Contraste, pois a redução de custos é importante, mas faltam profissionais talentosos."
+        }
+    },
+    {
+        "id_da_questao": 282751036,
+        "contexto": "To ensure that AI systems are fair and equitable and serve the needs of all users, it is crucial to identify and mitigate bias in AI. Moreover , the use of biased AI has numerous ethical implications, including the potential for discrimination, the responsibility of developers and policymakers, undermining public trust in technology, and limiting human agency and autonomy.",
+        "enunciado_pergunta": "A palavra em destaque \"MOREOVER\" transmite a ideia de:",
+        "alternativa_correta": {
+            "C": "Adição."
+        }
+    },
+    {
+        "id_da_questao": 282751037,
+        "contexto": "The growing use of AI systems has intensified discussions around fairness and bias in artificial intelligence as potential biases and discrimination become more apparent. This study examines the sources, impacts, and mitigation strategies related to fairness and bias in AI. Multiple studies have identified biases against certain groups in AI systems, such as the facial recognition systems studied by Buolamwini and Gebru and hiring algorithms examined by Dastin. These biases can perpetuate systemic discrimination and inequality, with detrimental effects on individuals and communities in areas like hiring, lending, and criminal justice.",
+        "enunciado_pergunta": "O fragmento do artigo trata da parcialidade em sistemas de IA, apontando que um dos preconceitos está presente",
+        "alternativa_correta": {
+            "E": "em sistemas de reconhecimento facial."
+        }
+    },
+    {
+        "id_da_questao": 282751039,
+        "contexto": "Observe o mapa. Os elementos de um mapa são obrigatórios e indispensáveis na transmissão das informações, servindo como instrumentos de análise e leitura. São elementos de um mapa: título e subtítulo, legenda, orientação, escala e fonte. Material digital - SEDUC - 3º bimestre (adaptado).",
+        "enunciado_pergunta": "O elemento de um mapa que indica a posição espacial, geralmente com o uso da rosa dos ventos ou do norte setorial se refere",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/OKbHu7fVaAWK9NFOX0ePoQqHQwmsYH.jpg",
+        "alternativa_correta": {
+            "D": "a orientação."
+        }
+    },
+    {
+        "id_da_questao": 282751040,
+        "contexto": "Observe a imagem. Disponível em: https://atlasescolar.ibge.gov.br/cartografia/21733-as-projecoes-cartograficas.html Acesso em 24 jul. 2025. As projeções cartográficas são representações do globo terrestre em superfícies planas. Cada tipo de projeção apresenta vantagens e distorções específicas, de acordo com o objetivo do mapa. A projeção indicada para representar áreas próximas aos polos, mantendo maior precisão nessas regiões é denominada projeção: ",
+        "enunciado_pergunta": "",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/2Uvcf36Tl51nWAyHN3QVL3sAmil5u9.jpg",
+        "alternativa_correta": {
+            "E": "Plana ou azimutal."
+        }
+    },
+    {
+        "id_da_questao": 282751041,
+        "contexto": "Os mapas temáticos são instrumentos fundamentais da cartografia que representam fenômenos variados do espaço geográfico. Eles podem ser classificados em qualitativos e quantitativos, dependendo do tipo de informação apresentada.",
+        "enunciado_pergunta": " Os mapas quantitativos apresentam:",
+        "alternativa_correta": {
+            "C": "Valores numéricos, como volume de chuvas ou população absoluta."
+        }
+    },
+    {
+        "id_da_questao": 282751042,
+        "contexto": "Observe a imagem. Imagem fictícia de satélite capturando dados para produzir imagem de área. Disponível em: Sensoriamento Remoto - Atlas Geográfico Escolar - IBGE Acesso em 24 jul. 2025. O sensoriamento é uma ferramenta voltada para a análise e monitoramento do espaço geográfico, com aplicação em diversas áreas. Em relação ao meio ambiente, é utilizado na análise de mudanças climáticas, contribuindo para a conservação ambiental. Material Digital - SEDUC - 3º bimestre (adaptado).",
+        "enunciado_pergunta": "O uso do sensoriamento remoto, nesse contexto, possibilita:",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/Pdyfc4hhnmG8eogfc2lR5EVqI4CUAc.jpg",
+        "alternativa_correta": {
+            "A": "Identificar focos de desmatamento e mudanças na vegetação de áreas extensas."
+        }
+    },
+    {
+        "id_da_questao": 282751043,
+        "contexto": "Observe a imagem. Material Digital - SEDUC - 3º bimestre O geoprocessamento é uma tecnologia que permite analisar informações espaciais por meio de mapas, imagens de satélite e sistemas digitais. No planejamento urbano, essa ferramenta é essencial para apoiar a tomada de decisões nas cidades.",
+        "enunciado_pergunta": "Considerando o contexto apresentado, um dos principais objetivos do uso do geoprocessamento no planejamento urbano corresponde a:",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/povzcTMPeC5euHSkrZ7afpnxGmLu9s.jpg",
+        "alternativa_correta": {
+            "E": "Ordenar o crescimento urbano, auxiliando na organização do uso do solo e na preservação de áreas sensíveis."
+        }
+    },
+    {
+        "id_da_questao": 282751045,
+        "contexto": "Leia o texto e responda. A expressão “cortina de ferro”, que simbolizava uma barreira ideológica entre dois mundos, marcou o início da Guerra Fria — um período de tensão prolongada entre 1945 e 1991. Este conflito opôs o bloco capitalista, liderado pelos Estados Unidos, ao bloco socialista, sob a liderança da União Soviética. A Guerra Fria teve impacto em vários setores da sociedade, incluindo o econômico, o político, o diplomático, o cultural, o artístico, o da propaganda e o tecnológico. Material Digital – Seduc – 3º Bimestre (Adaptado)",
+        "enunciado_pergunta": "O período citado no texto e conhecido por “Guerra Fria” pode ser definido como aquele momento histórico em que houve",
+        "alternativa_correta": {
+            "A": "disputa ideológica, política e tecnológica entre os blocos capitalista e socialista, sem confronto militar direto."
+        }
+    },
+    {
+        "id_da_questao": 282751046,
+        "contexto": "Observe a imagem e responda. A Corrida Espacial durante a Guerra Fria. Disponível em: https://pt.wikipedia.org/wiki/Corrida_espacial A Corrida Espacial foi um dos acontecimentos mais espetaculares da Humanidade. BUENO, Chris. Chegada do homem à Lua comemora 40 anos com nova missão . Revista Ciência e Cultura, v.61, n.3, São Paulo: SBPC, 2009.",
+        "enunciado_pergunta": "Indique a alternativa correta a respeito da Corrida Espacial.",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/Y3AXaRogf4YIOcOroFk69DolrXYRPf.png",
+        "alternativa_correta": {
+            "E": "Os soviéticos lançaram o satélite Sputnik e o primeiro ser vivo ao espaço em 1957."
+        }
+    },
+    {
+        "id_da_questao": 282751047,
+        "contexto": "O texto abaixo faz menção ao chamado Pan-africanismo. “Eu falo da liberdade”. “Durante séculos, os europeus dominaram o continente africano, o homem branco se arrogou o direito de governar e ser obedecido pelos não-brancos; sua missão, dizia ele, era \"civilizar\" a África. Sob esse manto, os europeus roubaram o continente de vastas riquezas e infligiram sofrimentos inimagináveis ao povo africano. Tudo isso forma uma história triste, mas agora devemos estar preparados para enterrar o passado com suas memórias desagradáveis e olhar para o futuro mundo\". [...] NKRUMAH, K. Eu falo da liberdade: uma declaração de ideologia africana . Apud: MANOEL, J.; LANDI, G. (orgs.). Revolução Africana: uma antologia do pensamento marxista. p. 108.",
+        "enunciado_pergunta": " Indique a alternativa que explicita o projeto político e cultural do pan-africanismo.",
+        "alternativa_correta": {
+            "B": "Promover a unidade dos povos africanos, a valorização de suas culturas e a luta pela autonomia frente ao colonialismo."
+        }
+    },
+    {
+        "id_da_questao": 282751048,
+        "contexto": "Leia o texto e responda. [...] Os camponeses armados e disciplinados desfilando em Pequim, Tientsin, Shanghai e Cantão provocam a admiração do povo chinês e do mundo. O movimento social camponês provara na prática sua capacidade política e potencial revolucionário, agrupando as demais classes e setores sociais em torno de suas lutas e se constituindo na força social principal da Revolução. Derrubara e vencera a velha ordem, conquistando suas reivindicações básicas. Um novo desafio, contudo, rapidamente se levantaria: o da construção de uma nova sociedade – pacífica, harmônica, justa. REIS FILHO, D. A. A revolução chinesa . São Paulo: Brasiliense, 1981.",
+        "enunciado_pergunta": "De acordo com este texto,  a atuação dos camponeses na Revolução Chinesa",
+        "alternativa_correta": {
+            "D": "destacou-se pela capacidade de organização e influência na construção de uma nova ordem social."
+        }
+    },
+    {
+        "id_da_questao": 282751049,
+        "contexto": null,
+        "enunciado_pergunta": "A Revolução Cubana, iniciada em 1º de janeiro de 1959, marcou uma mudança profunda no cenário político da América Latina. Liderada por Fidel Castro e Che Guevara, resultou na derrubada do regime de Fulgêncio Batista. Sobre esse processo revolucionário e suas consequências, assinale a alternativa correta.",
+        "alternativa_correta": {
+            "B": "O novo governo cubano estatizou a economia e alinhou-se politicamente à União Soviética, tornando-se foco de tensão com os Estados Unidos."
+        }
+    },
+    {
+        "id_da_questao": 282751051,
+        "contexto": null,
+        "enunciado_pergunta": "Os negócios podem surgir para atender diferentes demandas das empresas, por exemplo, os negócios sociais e de base tecnológica. Os negócios sociais são empreendimentos que visam resolver problemas sociais ou ambientais, reinvestindo seus lucros para ampliar o impacto positivo. Já os negócios de base tecnológica",
+        "alternativa_correta": {
+            "B": "utilizam intensivamente ciência e inovação para criar soluções de crescimento e lucro."
+        }
+    },
+    {
+        "id_da_questao": 282751052,
+        "contexto": " Os seguintes critérios fazem parte de uma pesquisa de mercado: I- Problemas do público-alvo II- Lacunas do mercado III-Tendências do setor IV-Preferências dos consumidores V- Inovação",
+        "enunciado_pergunta": "De acordo com esta pesquisa, a pergunta “Quais mudanças ou inovações do setor podem influenciar essa área nos próximos anos?\" refere-se ",
+        "alternativa_correta": {
+            "C": "às tendências do setor."
+        }
+    },
+    {
+        "id_da_questao": 282751053,
+        "contexto": "A tabela seguinte apresenta as 3 fases das técnicas do Brainstorming e justificativas do que acontece nestas fases: ",
+        "enunciado_pergunta": "Associe as fases do brainstorming às justificativas que explicam por que essa técnica deve ser utilizada.",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/ztBqdfuCh6eymme8pgD8qO7qmDI84H.png",
+        "alternativa_correta": {
+            "A": "I-b, II-c e III-a"
+        }
+    },
+    {
+        "id_da_questao": 282751054,
+        "contexto": "Ao revisar dados estatísticos, realizamos perguntas que seguem um fluxo para compreensão do problema.",
+        "enunciado_pergunta": "A sequência correta deste fluxo é apresentada pelas seguintes etapas:",
+        "alternativa_correta": {
+            "D": "dimensão → impactos → tendências → validação de soluções"
+        }
+    },
+    {
+        "id_da_questao": 282751055,
+        "contexto": " Observe a representação de um modelo de negócios: ",
+        "enunciado_pergunta": "Na imagem, as letras A, B e C correspondem à associação:",
+        "imagem_url": "https://edusp-static.ip.tv/tms/edusp/tv.ip.edusp/8udJJx0BUBqCjfXJnKwYZKWGuyb7Vr.png",
+        "alternativa_correta": {
+            "E": "A-  Recursos, B- Valor Agregado , C- Segmento"
+        }
+    },
+    {
+        "id_da_questao": 282751057,
+        "contexto": " Durante uma feira de ciências, estudantes apresentaram trabalhos sobre o uso de microrganismos modificados geneticamente em diferentes áreas da biotecnologia. Um dos grupos destacou a importância desses organismos na área da saúde, especialmente no desenvolvimento de terapias inovadoras e na produção de substâncias de interesse farmacêutico.",
+        "enunciado_pergunta": "Qual a aplicação que envolve o uso da engenharia genética, por meio da produção de microrganismos, que ajudam no tratamento de doenças?",
+        "alternativa_correta": {
+            "A": "A modificação de microrganismos para produzir hormônios utilizados em terapias médicas."
+        }
+    },
+    {
+        "id_da_questao": 282751058,
+        "contexto": " Dois pacientes, João e Maria, recebem a mesma dose de um medicamento para controlar a pressão arterial. No entanto, o médico observa que o tratamento é muito eficaz para Maria, mas causa efeitos colaterais indesejados em João. Essa diferença na reação ao mesmo fármaco pode ser explicada por pequenas variações genéticas entre eles.",
+        "enunciado_pergunta": "Qual é o campo da biotecnologia que estuda como as variações no DNA das pessoas influenciam a resposta aos medicamentos, permitindo tratamentos mais personalizados como no caso de João e Maria?",
+        "alternativa_correta": {
+            "D": "A farmacogenômica."
+        }
+    },
+    {
+        "id_da_questao": 282751059,
+        "contexto": " A desinformação sobre infecções sexualmente transmissíveis (ISTs) ainda é um desafio no contexto da saúde pública brasileira, especialmente entre adolescentes. Embora algumas dessas infecções não sejam de notificação compulsória, estudos em serviços de saúde e organizações sociais revelam que clamídia, gonorreia e sífilis estão entre as ISTs mais comuns nessa faixa etária. O desconhecimento sobre as formas de transmissão e prevenção contribui para a propagação dessas doenças, reforçando a importância da educação sexual e da testagem regular.",
+        "enunciado_pergunta": "Considerando essas informações sobre os agentes causadores e as medidas de prevenção, identifique a alternativa que está em consonância com os dados apresentados:",
+        "alternativa_correta": {
+            "A": "São infecções causadas por bactérias, têm tratamento com antibióticos, e o uso correto de preservativos é uma das medidas mais eficazes para evitar sua transmissão."
+        }
+    },
+    {
+        "id_da_questao": 282751060,
+        "contexto": " Durante uma feira de ciências na escola, um grupo de estudantes preparou um painel explicando como as vacinas evoluíram com as novas tecnologias. Porém, surgiram dúvidas sobre quais informações são realmente corretas sobre o tema.",
+        "enunciado_pergunta": "Entre as opções abaixo, qual explicação o grupo deve escolher para orientar corretamente os visitantes da feira sobre as inovações no desenvolvimento de vacinas?",
+        "alternativa_correta": {
+            "C": "A tecnologia de RNA mensageiro permite criar vacinas com respostas imunes mais específicas, sendo um grande avanço."
+        }
+    },
+    {
+        "id_da_questao": 282751061,
+        "contexto": " Durante uma oficina de Ciências na escola, a professora propôs um desafio aos estudantes: pensar em como a Biotecnologia pode ajudar no tratamento de doenças genéticas e no combate ao câncer. Ana, curiosa, pesquisou sobre uma técnica chamada RNA interferente (iRNA), que segundo os cientistas, é capaz de \"silenciar\" genes indesejados. Porém, ao apresentar sua pesquisa, Ana se deparou com diferentes opiniões dos colegas sobre o uso e a importância dessa técnica nos dias de hoje.",
+        "enunciado_pergunta": "Diante dessa situação, o que explica o papel do RNA interferente (iRNA) na Biotecnologia moderna e sua relevância para a saúde humana?",
+        "alternativa_correta": {
+            "B": "Pode ser utilizado para inibir a expressão de genes específicos, ajudando a controlar a produção de proteínas relacionadas a doenças."
+        }
+    }
+];
+
+    // --- FUNÇÕES AUXILIARES ---
+
+    // Função que resolve uma única questão. Retorna true se bem-sucedida, false caso contrário.
+    function resolverQuestaoAtual() {
+        console.log('[BOT]: Procurando questão atual...');
+        const questaoElement = document.querySelector('div[chave]');
+        if (!questaoElement) {
+            console.error('[BOT]: ERRO! Não encontrou o elemento da questão. O bot será encerrado.');
+            return false;
+        }
+
+        const chaveCompleta = questaoElement.getAttribute('chave');
+        const idDaQuestao = chaveCompleta.split('-').pop();
+        if (!idDaQuestao) {
+            console.error('[BOT]: ERRO! Não conseguiu extrair o ID da questão. O bot será encerrado.');
+            return false;
+        }
+        console.log(`[BOT]: Resolvendo questão ID: ${idDaQuestao}`);
+
+        const questaoNoGabarito = jsonGabarito.find(q => q.id_da_questao == idDaQuestao);
+        if (!questaoNoGabarito) {
+            console.error(`[BOT]: ERRO! Questão com ID ${idDaQuestao} não encontrada no gabarito. O bot será encerrado.`);
+            return false;
+        }
+
+        const textoRespostaCorreta = Object.values(questaoNoGabarito.alternativa_correta)[0].trim();
+        const todasAsAlternativas = questaoElement.querySelectorAll('.MuiFormControlLabel-root');
+        let respostaSelecionada = false;
+
+        todasAsAlternativas.forEach(labelElement => {
+            const textoElement = labelElement.nextElementSibling?.querySelector('.ql-editor p');
+            if (textoElement && textoElement.textContent.trim() === textoRespostaCorreta) {
+                const inputRadio = labelElement.querySelector('input[type="radio"]');
+                if (inputRadio) {
+                    inputRadio.click();
+                    respostaSelecionada = true;
+                    console.log(`[BOT]: Resposta correta para a questão ${idDaQuestao} foi selecionada.`);
+                }
+            }
+        });
+
+        if (!respostaSelecionada) {
+            console.warn(`[BOT]: AVISO! Não encontrou a alternativa correspondente para a questão ${idDaQuestao}. Pulando para a próxima.`);
+        }
+        return true;
+    }
+
+    // Função de espera com verificação de parada de emergência.
+    async function esperarComParadaDeEmergencia() {
+        const tempoDeEspera = Math.floor(Math.random() * (MAX_ESPERA_SEGUNDOS - MIN_ESPERA_SEGUNDOS + 1) + MIN_ESPERA_SEGUNDOS);
+        console.log(`[BOT]: Resposta selecionada. Aguardando ${tempoDeEspera} segundos antes de avançar...`);
+
+        for (let i = 0; i < tempoDeEspera; i++) {
+            if (!window.rodarBot) {
+                console.log('[BOT]: PARADA DE EMERGÊNCIA ACIONADA! O script foi interrompido.');
+                return false; // Sinaliza que a espera foi interrompida
+            }
+            // Espera 1 segundo
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        return true; // Sinaliza que a espera foi concluída
+    }
+
+    // Função que clica no botão "Proxima".
+    function clicarProxima() {
+        // O seletor '.css-ell3ie' parece ser específico para o botão "Proxima".
+        const proximoBtn = document.querySelector('.MuiBox-root.css-1xaekgw button.css-ell3ie');
+        if (proximoBtn && proximoBtn.textContent.includes('Proxima')) {
+            console.log('[BOT]: Clicando no botão "Proxima"...');
+            proximoBtn.click();
+            return true;
+        } else {
+            console.log('[BOT]: FIM DA PROVA? Não foi possível encontrar o botão "Proxima". Encerrando o bot.');
+            return false;
+        }
+    }
+
+    // --- LOOP PRINCIPAL DO BOT ---
+    async function iniciarLoop() {
+        console.log('[BOT]: Iniciando loop de resolução automática.');
+
+        while (window.rodarBot) {
+            // Espera um pouco para a nova questão carregar na tela
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // 1. Resolve a questão
+            if (!resolverQuestaoAtual()) {
+                window.rodarBot = false; // Encerra se houver erro
+                break;
+            }
+
+            // 2. Espera o tempo configurado
+            const continuou = await esperarComParadaDeEmergencia();
+            if (!continuou) break; // Encerra se a parada de emergência foi acionada
+
+            // 3. Clica para ir para a próxima
+            if (!clicarProxima()) {
+                window.rodarBot = false; // Encerra se não encontrar o botão
+                break;
+            }
+        }
+
+        if (!window.rodarBot) {
+            console.log('[BOT]: Loop encerrado.');
+        }
+    }
+
+    // Inicia o processo
+    iniciarLoop();
+
+})();
