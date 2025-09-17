@@ -1,19 +1,19 @@
-// ==================================================
-// == SCRIPT AUTO-SOLVER BOT v4.0
-// == Resolve a prova inteira automaticamente.
-// ==================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
 
-(function() {
-    // --- CONFIGURAÇÕES GLOBAIS ---
-    const MIN_ESPERA_SEGUNDOS = 40;
-    const MAX_ESPERA_SEGUNDOS = 100;
+    (function() {
+    const MIN_ESPERA_SEGUNDOS = 20;
+    const MAX_ESPERA_SEGUNDOS = 75;
 
-    // --- CONTROLE DE EXECUÇÃO ---
-    // Para parar o bot, abra o console (F12) e digite: window.rodarBot = false;
     window.rodarBot = true;
     console.log('[BOT]: Para parar a execução a qualquer momento, digite "window.rodarBot = false;" no console e pressione Enter.');
 
-    // --- BANCO DE DADOS DE RESPOSTAS ---
     const jsonGabarito = [
     {
         "questao_numero": 1,
@@ -468,38 +468,59 @@
     }
 ];
 
-    // --- FUNÇÕES AUXILIARES ---
-
-    // Função que resolve uma única questão. Retorna true se bem-sucedida, false caso contrário.
     function resolverQuestaoAtual() {
         console.log('[BOT]: Procurando questão atual...');
         const questaoElement = document.querySelector('div[chave]');
         if (!questaoElement) {
             console.error('[BOT]: ERRO! Não encontrou o elemento da questão. O bot será encerrado.');
-            return false;
+            return 'ERRO';
+        }
+
+        const respostaJaMarcada = questaoElement.querySelector('input[type="radio"]:checked');
+        if (respostaJaMarcada) {
+            console.log('[BOT]: Questão já respondida. Pulando para a próxima sem esperar.');
+            return 'PULADA';
         }
 
         const chaveCompleta = questaoElement.getAttribute('chave');
         const idDaQuestao = chaveCompleta.split('-').pop();
         if (!idDaQuestao) {
             console.error('[BOT]: ERRO! Não conseguiu extrair o ID da questão. O bot será encerrado.');
-            return false;
+            return 'ERRO';
         }
         console.log(`[BOT]: Resolvendo questão ID: ${idDaQuestao}`);
 
-        const questaoNoGabarito = jsonGabarito.find(q => q.id_da_questao == idDaQuestao);
+        const questaoNoGabarito = jsonGabarito.find(q => String(q.id_da_questao) === idDaQuestao);
         if (!questaoNoGabarito) {
-            console.error(`[BOT]: ERRO! Questão com ID ${idDaQuestao} não encontrada no gabarito. O bot será encerrado.`);
-            return false;
+            console.warn(`[BOT]: AVISO! Questão com ID ${idDaQuestao} não encontrada no gabarito. Pulando para a próxima sem esperar.`);
+            return 'PULADA';
         }
 
         const textoRespostaCorreta = Object.values(questaoNoGabarito.alternativa_correta)[0].trim();
+        const isRespostaImagem = textoRespostaCorreta.startsWith('[IMAGEM]');
+
         const todasAsAlternativas = questaoElement.querySelectorAll('.MuiFormControlLabel-root');
         let respostaSelecionada = false;
 
         todasAsAlternativas.forEach(labelElement => {
-            const textoElement = labelElement.nextElementSibling?.querySelector('.ql-editor p');
-            if (textoElement && textoElement.textContent.trim() === textoRespostaCorreta) {
+            let encontrou = false;
+            const containerAlternativa = labelElement.nextElementSibling;
+
+            if (isRespostaImagem) {
+                const urlImagemCorreta = textoRespostaCorreta.replace('[IMAGEM]', '').trim();
+                const imgElement = containerAlternativa?.querySelector('img');
+                if (imgElement && imgElement.src === urlImagemCorreta) {
+                    encontrou = true;
+                }
+            } else {
+
+                const editorElement = containerAlternativa?.querySelector('.ql-editor');
+                if (editorElement && editorElement.textContent.trim() === textoRespostaCorreta) {
+                    encontrou = true;
+                }
+            }
+
+            if (encontrou) {
                 const inputRadio = labelElement.querySelector('input[type="radio"]');
                 if (inputRadio) {
                     inputRadio.click();
@@ -510,12 +531,13 @@
         });
 
         if (!respostaSelecionada) {
-            console.warn(`[BOT]: AVISO! Não encontrou a alternativa correspondente para a questão ${idDaQuestao}. Pulando para a próxima.`);
+            console.warn(`[BOT]: AVISO! Não encontrou a alternativa correspondente para a questão ${idDaQuestao}. Pulando para a próxima sem esperar.`);
+            return 'PULADA';
         }
-        return true;
+
+        return 'RESPONDIDA';
     }
 
-    // Função de espera com verificação de parada de emergência.
     async function esperarComParadaDeEmergencia() {
         const tempoDeEspera = Math.floor(Math.random() * (MAX_ESPERA_SEGUNDOS - MIN_ESPERA_SEGUNDOS + 1) + MIN_ESPERA_SEGUNDOS);
         console.log(`[BOT]: Resposta selecionada. Aguardando ${tempoDeEspera} segundos antes de avançar...`);
@@ -523,17 +545,14 @@
         for (let i = 0; i < tempoDeEspera; i++) {
             if (!window.rodarBot) {
                 console.log('[BOT]: PARADA DE EMERGÊNCIA ACIONADA! O script foi interrompido.');
-                return false; // Sinaliza que a espera foi interrompida
+                return false; 
             }
-            // Espera 1 segundo
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        return true; // Sinaliza que a espera foi concluída
+        return true; 
     }
 
-    // Função que clica no botão "Proxima".
     function clicarProxima() {
-        // O seletor '.css-ell3ie' parece ser específico para o botão "Proxima".
         const proximoBtn = document.querySelector('.MuiBox-root.css-1xaekgw button.css-ell3ie');
         if (proximoBtn && proximoBtn.textContent.includes('Proxima')) {
             console.log('[BOT]: Clicando no botão "Proxima"...');
@@ -545,27 +564,26 @@
         }
     }
 
-    // --- LOOP PRINCIPAL DO BOT ---
     async function iniciarLoop() {
         console.log('[BOT]: Iniciando loop de resolução automática.');
 
         while (window.rodarBot) {
-            // Espera um pouco para a nova questão carregar na tela
             await new Promise(resolve => setTimeout(resolve, 3000));
 
-            // 1. Resolve a questão
-            if (!resolverQuestaoAtual()) {
-                window.rodarBot = false; // Encerra se houver erro
+            const statusResolucao = resolverQuestaoAtual();
+
+            if (statusResolucao === 'ERRO') {
+                window.rodarBot = false; 
                 break;
             }
 
-            // 2. Espera o tempo configurado
-            const continuou = await esperarComParadaDeEmergencia();
-            if (!continuou) break; // Encerra se a parada de emergência foi acionada
+            if (statusResolucao === 'RESPONDIDA') {
+                const continuou = await esperarComParadaDeEmergencia();
+                if (!continuou) break; 
+            }
 
-            // 3. Clica para ir para a próxima
             if (!clicarProxima()) {
-                window.rodarBot = false; // Encerra se não encontrar o botão
+                window.rodarBot = false; 
                 break;
             }
         }
@@ -575,7 +593,10 @@
         }
     }
 
-    // Inicia o processo
     iniciarLoop();
 
 })();
+
+
+</body>
+</html>

@@ -1,80 +1,151 @@
-const http = require('http' );
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+(function() {
+    const MIN_ESPERA_SEGUNDOS = 20;
+    const MAX_ESPERA_SEGUNDOS = 75;
 
-const PORT = 12345;
+    window.rodarBot = true;
+    console.log('[BOT]: Para parar a execução a qualquer momento, digite "window.rodarBot = false;" no console e pressione Enter.');
 
-function getLocalIpAddress() {
-    const interfaces = os.networkInterfaces();
-    for (const name of Object.keys(interfaces)) {
-        for (const iface of interfaces[name]) {
-            if (iface.family === 'IPv4' && !iface.internal) {
-                return iface.address;
+    // Cole aqui o JSON com o gabarito completo.
+    const jsonGabarito = [
+        // ... (seu JSON completo aqui)
+    ];
+
+    /**
+     * Tenta resolver a questão atual.
+     * @returns {string} Retorna o status da operação:
+     * 'RESPONDIDA' - se o bot selecionou uma resposta.
+     * 'PULADA' - se a questão já estava respondida ou não foi encontrada.
+     * 'ERRO' - se um erro fatal ocorreu.
+     */
+    function resolverQuestaoAtual() {
+        console.log('[BOT]: Procurando questão atual...');
+        const questaoElement = document.querySelector('div[chave]');
+        if (!questaoElement) {
+            console.error('[BOT]: ERRO! Não encontrou o elemento da questão. O bot será encerrado.');
+            return 'ERRO';
+        }
+
+        const respostaJaMarcada = questaoElement.querySelector('input[type="radio"]:checked');
+        if (respostaJaMarcada) {
+            console.log('[BOT]: Questão já respondida. Pulando para a próxima sem esperar.');
+            return 'PULADA';
+        }
+
+        const chaveCompleta = questaoElement.getAttribute('chave');
+        const idDaQuestao = chaveCompleta.split('-').pop();
+        if (!idDaQuestao) {
+            console.error('[BOT]: ERRO! Não conseguiu extrair o ID da questão. O bot será encerrado.');
+            return 'ERRO';
+        }
+        console.log(`[BOT]: Resolvendo questão ID: ${idDaQuestao}`);
+
+        const questaoNoGabarito = jsonGabarito.find(q => String(q.id_da_questao) === idDaQuestao);
+        if (!questaoNoGabarito) {
+            console.warn(`[BOT]: AVISO! Questão com ID ${idDaQuestao} não encontrada no gabarito. Pulando para a próxima sem esperar.`);
+            return 'PULADA';
+        }
+
+        const textoRespostaCorreta = Object.values(questaoNoGabarito.alternativa_correta)[0].trim();
+        const isRespostaImagem = textoRespostaCorreta.startsWith('[IMAGEM]');
+        
+        const todasAsAlternativas = questaoElement.querySelectorAll('.MuiFormControlLabel-root');
+        let respostaSelecionada = false;
+
+        todasAsAlternativas.forEach(labelElement => {
+            let encontrou = false;
+            const containerAlternativa = labelElement.nextElementSibling;
+
+            if (isRespostaImagem) {
+                const urlImagemCorreta = textoRespostaCorreta.replace('[IMAGEM]', '').trim();
+                const imgElement = containerAlternativa?.querySelector('img');
+                if (imgElement && imgElement.src === urlImagemCorreta) {
+                    encontrou = true;
+                }
+            } else {
+                // --- CORREÇÃO: Torna a busca pelo texto mais flexível ---
+                // Pega o texto do '.ql-editor', que funciona mesmo se não houver um <p> dentro.
+                const editorElement = containerAlternativa?.querySelector('.ql-editor');
+                if (editorElement && editorElement.textContent.trim() === textoRespostaCorreta) {
+                    encontrou = true;
+                }
             }
+
+            if (encontrou) {
+                const inputRadio = labelElement.querySelector('input[type="radio"]');
+                if (inputRadio) {
+                    inputRadio.click();
+                    respostaSelecionada = true;
+                    console.log(`[BOT]: Resposta correta para a questão ${idDaQuestao} foi selecionada.`);
+                }
+            }
+        });
+
+        if (!respostaSelecionada) {
+            console.warn(`[BOT]: AVISO! Não encontrou a alternativa correspondente para a questão ${idDaQuestao}. Pulando para a próxima sem esperar.`);
+            return 'PULADA';
+        }
+        
+        return 'RESPONDIDA';
+    }
+
+    async function esperarComParadaDeEmergencia() {
+        const tempoDeEspera = Math.floor(Math.random() * (MAX_ESPERA_SEGUNDOS - MIN_ESPERA_SEGUNDOS + 1) + MIN_ESPERA_SEGUNDOS);
+        console.log(`[BOT]: Resposta selecionada. Aguardando ${tempoDeEspera} segundos antes de avançar...`);
+
+        for (let i = 0; i < tempoDeEspera; i++) {
+            if (!window.rodarBot) {
+                console.log('[BOT]: PARADA DE EMERGÊNCIA ACIONADA! O script foi interrompido.');
+                return false; 
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        return true; 
+    }
+
+    function clicarProxima() {
+        const proximoBtn = document.querySelector('.MuiBox-root.css-1xaekgw button.css-ell3ie');
+        if (proximoBtn && proximoBtn.textContent.includes('Proxima')) {
+            console.log('[BOT]: Clicando no botão "Proxima"...');
+            proximoBtn.click();
+            return true;
+        } else {
+            console.log('[BOT]: FIM DA PROVA? Não foi possível encontrar o botão "Proxima". Encerrando o bot.');
+            return false;
         }
     }
-    return 'localhost';
-}
 
-const server = http.createServer((req, res ) => {
-    // Extrai a URL base sem os parâmetros de busca (o que vem depois de '?')
-    const baseUrl = req.url.split('?')[0];
+    async function iniciarLoop() {
+        console.log('[BOT]: Iniciando loop de resolução automática.');
 
-    // Rota principal para servir o index.html (o buscador)
-    if (baseUrl === '/') {
-        const indexPath = path.join(__dirname, 'index.html');
-        // CORREÇÃO APLICADA AQUI: Adicionado 'utf8' e tratamento de erro completo.
-        fs.readFile(indexPath, 'utf8', (err, content) => {
-            if (err) {
-                console.error('Erro ao ler o arquivo index.html:', err);
-                res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-                res.end('Erro no servidor: Não foi possível carregar o index.html.');
-                return;
+        while (window.rodarBot) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            const statusResolucao = resolverQuestaoAtual();
+
+            if (statusResolucao === 'ERRO') {
+                window.rodarBot = false; 
+                break;
             }
-            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(content);
-        });
-    }
-    // Rota para o fetch do buscador (JSON completo)
-    else if (baseUrl === '/questoes') {
-        const jsonPath = path.join(__dirname, 'task_76781616.json');
-        fs.readFile(jsonPath, 'utf8', (err, data) => {
-            if (err) {
-                res.writeHead(500);
-                res.end('Erro ao carregar task_76781616.json');
-                return;
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(data);
-        });
-    }
-    // Rota para o script do bookmarklet
-    else if (baseUrl === '/script') {
-        const scriptPath = path.join(__dirname, 'script.txt');
-        fs.readFile(scriptPath, 'utf8', (err, data) => {
-            if (err) {
-                res.writeHead(500);
-                res.end('Erro ao carregar script.txt');
-                return;
-            }
-            res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
-            res.end(data);
-        });
-    }
-    // Resposta para rotas não encontradas
-    else {
-        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end(`Endpoint não encontrado: ${baseUrl}`);
-    }
-});
 
-const localIp = getLocalIpAddress();
+            // --- IMPLEMENTAÇÃO: ESPERA CONDICIONAL ---
+            // Só espera o tempo longo se a questão tiver sido de fato respondida pelo bot.
+            if (statusResolucao === 'RESPONDIDA') {
+                const continuou = await esperarComParadaDeEmergencia();
+                if (!continuou) break; 
+            }
+            // Se o status for 'PULADA', o loop continua e clica em "Próxima" imediatamente.
 
-server.listen(PORT, () => {
-    console.log(`Servidor completo rodando!`);
-    console.log(`\nBuscador de Questões: http://${localIp}:${PORT}` );
-    console.log(`Solver (Bookmarklet): Clique no favorito na página da atividade.`);
-    console.log('Bookmarklet: javascript:(function(){var s=document.createElement(\'script\');s.src=\'http://localhost:12345/script?t=%27+new Date( ).getTime();document.body.appendChild(s);})();');
-    console.log('\n\nUtilize \"window.rodarBot = false;\" para parar o script');
-});
+            if (!clicarProxima()) {
+                window.rodarBot = false; 
+                break;
+            }
+        }
+
+        if (!window.rodarBot) {
+            console.log('[BOT]: Loop encerrado.');
+        }
+    }
+
+    iniciarLoop();
+
+})();
